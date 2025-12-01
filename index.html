@@ -3,68 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Description to Keyword Converter</title>
+    <title>Convert description to comma space keywords</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for Inter font and custom colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'gh-bg': '#0d1117',
+                        'gh-card': '#161b22',
+                        'gh-border': '#30363d',
+                        'gh-blue': '#2f81f7',
+                        'gh-green': '#2ea043',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Custom font */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
+        /* Custom scrollbar styling for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #30363d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #0d1117;
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="bg-gh-bg text-gray-100 min-h-screen p-4 sm:p-8 font-sans flex items-start justify-center">
 
-    <div class="w-full max-w-xl bg-white p-6 md:p-8 rounded-xl shadow-2xl border border-gray-100">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
-            Description to Keyword Comma Spaced
+    <div class="w-full max-w-3xl bg-gh-card border border-gh-border rounded-xl shadow-2xl p-6 sm:p-8">
+        <h1 class="text-3xl font-bold mb-6 text-center text-gh-blue">
+            Convert description to comma space keywords
         </h1>
-        <p class="text-gray-600 mb-6 text-center">
-            Paste your project description below. Spaces will be converted to a comma and a single space (`, `) for easy keyword/tagging use.
+        <p class="text-sm text-gray-400 mb-6 text-center">
+            Paste a descriptive string below. This tool will clean up extra spaces and convert single spaces into a single comma followed by a space (`, `).
         </p>
 
         <!-- Input Area -->
         <div class="mb-6">
-            <label for="inputString" class="block text-sm font-medium text-gray-700 mb-2">1. Paste Project Description:</label>
-            <textarea id="inputString" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-inner" placeholder="E.g., A lightweight utility for managing data structures efficiently"></textarea>
+            <label for="input-string" class="block text-sm font-medium mb-2">Original Description</label>
+            <textarea
+                id="input-string"
+                rows="4"
+                placeholder="e.g., A description of my awesome project that uses react and tailwind"
+                class="w-full p-3 bg-gh-bg border border-gh-border rounded-lg focus:ring-gh-blue focus:border-gh-blue outline-none transition duration-150 resize-y text-sm"
+            ></textarea>
         </div>
 
-        <!-- Conversion Button -->
+        <!-- Output Area (Read-Only) -->
         <div class="mb-8">
-            <button id="convertButton" onclick="convertAndCopy()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+            <label for="output-string" class="block text-sm font-medium mb-2">Converted Keywords</label>
+            <textarea
+                id="output-string"
+                rows="2"
+                readonly
+                placeholder="Converted result will appear here"
+                class="w-full p-3 bg-gh-bg border border-gh-border rounded-lg text-gh-green font-mono text-sm resize-none"
+            ></textarea>
+        </div>
+
+        <!-- Control and Status Area -->
+        <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+            <button
+                id="convert-button"
+                onclick="convertAndCopy()"
+                class="w-full sm:w-auto px-6 py-3 text-lg font-semibold rounded-lg text-white bg-gh-blue hover:bg-opacity-80 transition duration-150 focus:outline-none focus:ring-4 focus:ring-gh-blue/50 transform active:scale-95 shadow-lg shadow-gh-blue/30"
+            >
                 Convert String & Copy to Clipboard
             </button>
-        </div>
-
-        <!-- Output Area -->
-        <div>
-            <label for="outputString" class="block text-sm font-medium text-gray-700 mb-2">2. Keyword Output (Copied!):</label>
-            <textarea id="outputString" rows="2" readonly class="w-full p-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-800 font-mono text-sm cursor-text"></textarea>
-            
-            <!-- Message Box for Feedback -->
-            <div id="messageBox" class="mt-3 p-3 bg-green-100 border border-green-300 text-green-800 rounded-lg text-sm hidden">
-                Success! Keywords converted and copied to clipboard.
+            <div id="status-message" class="text-sm h-6 flex items-center text-gray-400 sm:ml-4">
+                Ready to convert.
             </div>
         </div>
     </div>
 
     <script>
-        // Use exponential backoff for retries
-        const exponentialBackoff = async (fn, maxRetries = 3, delay = 500) => {
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    return await fn();
-                } catch (error) {
-                    if (i === maxRetries - 1) throw error;
-                    await new Promise(resolve => setTimeout(resolve, delay * (2 ** i)));
-                }
-            }
-        };
+        /**
+         * Converts the input string, updates the output, and copies the result to the clipboard.
+         */
+        function convertAndCopy() {
+            const inputElement = document.getElementById('input-string');
+            const outputElement = document.getElementById('output-string');
+            const statusElement = document.getElementById('status-message');
+            const inputString = inputElement.value;
 
+            if (!inputString.trim()) {
+                statusElement.className = "text-sm h-6 flex items-center text-yellow-400 sm:ml-4";
+                statusElement.textContent = "Error: Input cannot be empty.";
+                return;
+            }
+
+            // 1. Normalize spaces: replace all sequences of whitespace (including multiple spaces)
+            // with a single space, and then trim leading/trailing spaces.
+            const normalizedString = inputString.replace(/\s+/g, ' ').trim();
+
+            // 2. Replace the single space with a comma and a single space (", ")
+            const keywordsString = normalizedString.replace(/ /g, ', ');
+
+            // Update the output area
+            outputElement.value = keywordsString;
+
+            // 3. Copy the resulting string to the clipboard
+            try {
+                // Use the standard API if available
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(keywordsString).then(() => {
+                        // Success Feedback
+                        statusElement.className = "text-sm h-6 flex items-center text-gh-green font-semibold sm:ml-4";
+                        statusElement.textContent = "✅ Copied to clipboard!";
+                        setTimeout(() => {
+                            statusElement.className = "text-sm h-6 flex items-center text-gray-400 sm:ml-4";
+                            statusElement.textContent = "Ready to convert.";
+                        }, 3000);
+                    }).catch(err => {
+                        console.error('Failed to copy using navigator.clipboard:', err);
+                        fallbackCopy(keywordsString, statusElement);
+                    });
+                } else {
+                    // Fallback method for iFrames (execCommand)
+                    fallbackCopy(keywordsString, statusElement);
+                }
+            } catch (err) {
+                console.error('Clipboard operation failed:', err);
+                statusElement.className = "text-sm h-6 flex items-center text-red-400 sm:ml-4";
+                statusElement.textContent = "Error copying to clipboard.";
+            }
+        }
 
         /**
-         * Converts the input description into comma-spaced keywords.
-         * 1. Normalizes spaces (replaces multiple spaces, newlines, tabs with a single space).
-         * 2. Replaces the single space with ", ".
+         * Fallback copy mechanism using document.execCommand('copy').
+         */
+        function fallbackCopy(textToCopy, statusElement) {
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed'; // Prevent scrolling to bottom
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    statusElement.className = "text-sm h-6 flex items-center text-gh-green font-semibold sm:ml-4";
+                    statusElement.textContent = "✅ Copied (Fallback)!";
+                } else {
+                    throw new Error('execCommand failed');
+                }
+            } catch (err) {
+                statusElement.className = "text-sm h-6 flex items-center text-red-400 sm:ml-4";
+                statusElement.textContent = "Error: Cannot copy string.";
+            } finally {
+                document.body.removeChild(textarea);
+                setTimeout(() => {
+                    statusElement.className = "text-sm h-6 flex items-center text-gray-400 sm:ml-4";
+                    statusElement.textContent = "Ready to convert.";
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
