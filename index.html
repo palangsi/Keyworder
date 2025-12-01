@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Description to Keyword Converter</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-xl bg-white p-6 md:p-8 rounded-xl shadow-2xl border border-gray-100">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+            Description to Keyword Comma Spaced
+        </h1>
+        <p class="text-gray-600 mb-6 text-center">
+            Paste your project description below. Spaces will be converted to a comma and a single space (`, `) for easy keyword/tagging use.
+        </p>
+
+        <!-- Input Area -->
+        <div class="mb-6">
+            <label for="inputString" class="block text-sm font-medium text-gray-700 mb-2">1. Paste Project Description:</label>
+            <textarea id="inputString" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-inner" placeholder="E.g., A lightweight utility for managing data structures efficiently"></textarea>
+        </div>
+
+        <!-- Conversion Button -->
+        <div class="mb-8">
+            <button id="convertButton" onclick="convertAndCopy()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-200 ease-in-out transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                Convert String & Copy to Clipboard
+            </button>
+        </div>
+
+        <!-- Output Area -->
+        <div>
+            <label for="outputString" class="block text-sm font-medium text-gray-700 mb-2">2. Keyword Output (Copied!):</label>
+            <textarea id="outputString" rows="2" readonly class="w-full p-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-800 font-mono text-sm cursor-text"></textarea>
+            
+            <!-- Message Box for Feedback -->
+            <div id="messageBox" class="mt-3 p-3 bg-green-100 border border-green-300 text-green-800 rounded-lg text-sm hidden">
+                Success! Keywords converted and copied to clipboard.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use exponential backoff for retries
+        const exponentialBackoff = async (fn, maxRetries = 3, delay = 500) => {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    return await fn();
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay * (2 ** i)));
+                }
+            }
+        };
+
+
+        /**
+         * Converts the input description into comma-spaced keywords.
+         * 1. Normalizes spaces (replaces multiple spaces, newlines, tabs with a single space).
+         * 2. Replaces the single space with ", ".
