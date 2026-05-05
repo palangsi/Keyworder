@@ -1,174 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convert description to comma space keywords</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configure Tailwind for Inter font and custom colors -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'gh-bg': '#0d1117',
-                        'gh-card': '#161b22',
-                        'gh-border': '#30363d',
-                        'gh-blue': '#2f81f7',
-                        'gh-green': '#2ea043',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Custom scrollbar styling for a cleaner look */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background-color: #30363d;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background-color: #0d1117;
-        }
-    </style>
+  <title>Sentence Cleaner Plus</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; max-width: 700px; }
+    textarea { width: 100%; height: 150px; resize: vertical; }
+    button { margin-top: 10px; padding: 8px 12px; }
+    #output { background: #f9f9f9; }
+  </style>
 </head>
-<body class="bg-gh-bg text-gray-100 min-h-screen p-4 sm:p-8 font-sans flex items-start justify-center">
+<body>
+  <h2>Sentence Cleaner Plus</h2>
+  <p>Paste a sentence string below. It will:</p>
+  <ul>
+    <li>Remove extra spaces and commas</li>
+    <li>Remove words shorter than 3 characters</li>
+    <li>Preserve defined two-word phrases (no comma between them)</li>
+    <li>Return a clean comma + space separated string</li>
+  </ul>
 
-    <div class="w-full max-w-3xl bg-gh-card border border-gh-border rounded-xl shadow-2xl p-6 sm:p-8">
-        <h1 class="text-3xl font-bold mb-6 text-center text-gh-blue">
-            Convert description to comma space keywords
-        </h1>
-        <p class="text-sm text-gray-400 mb-6 text-center">
-            Paste a descriptive string below. This tool will clean up extra spaces and convert single spaces into a single comma followed by a space (`, `).
-        </p>
+  <h3>Input</h3>
+  <textarea id="input"></textarea>
+  <button id="convertBtn">Convert</button>
 
-        <!-- Input Area -->
-        <div class="mb-6">
-            <label for="input-string" class="block text-sm font-medium mb-2">Original Description</label>
-            <textarea
-                id="input-string"
-                rows="4"
-                placeholder="e.g., A description of my awesome project that uses react and tailwind"
-                class="w-full p-3 bg-gh-bg border border-gh-border rounded-lg focus:ring-gh-blue focus:border-gh-blue outline-none transition duration-150 resize-y text-sm"
-            ></textarea>
-        </div>
+  <h3>Output</h3>
+  <textarea id="output" readonly></textarea>
 
-        <!-- Output Area (Read-Only) -->
-        <div class="mb-8">
-            <label for="output-string" class="block text-sm font-medium mb-2">Converted Keywords</label>
-            <textarea
-                id="output-string"
-                rows="2"
-                readonly
-                placeholder="Converted result will appear here"
-                class="w-full p-3 bg-gh-bg border border-gh-border rounded-lg text-gh-green font-mono text-sm resize-none"
-            ></textarea>
-        </div>
+  <script>
+    // Define word pairs that should stay together
+    const wordPairs = [
+      "New York",
+      "Los Angeles",
+      "San Francisco"
+    ];
 
-        <!-- Control and Status Area -->
-        <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-            <button
-                id="convert-button"
-                onclick="convertAndCopy()"
-                class="w-full sm:w-auto px-6 py-3 text-lg font-semibold rounded-lg text-white bg-gh-blue hover:bg-opacity-80 transition duration-150 focus:outline-none focus:ring-4 focus:ring-gh-blue/50 transform active:scale-95 shadow-lg shadow-gh-blue/30"
-            >
-                Convert String & Copy to Clipboard
-            </button>
-            <div id="status-message" class="text-sm h-6 flex items-center text-gray-400 sm:ml-4">
-                Ready to convert.
-            </div>
-        </div>
-    </div>
+    function cleanSentence(inputText) {
+      let text = inputText
+        .trim()
+        .replace(/\s+/g, ' ')   // collapse spaces
+        .replace(/,+/g, ',')    // collapse commas
+        .replace(/,\s*/g, ', ');// normalize comma spacing
 
-    <script>
-        /**
-         * Converts the input string, updates the output, and copies the result to the clipboard.
-         */
-        function convertAndCopy() {
-            const inputElement = document.getElementById('input-string');
-            const outputElement = document.getElementById('output-string');
-            const statusElement = document.getElementById('status-message');
-            const inputString = inputElement.value;
+      // Protect word pairs by replacing spaces with underscores temporarily
+      wordPairs.forEach(pair => {
+        const regex = new RegExp(pair, "gi");
+        text = text.replace(regex, pair.replace(" ", "_"));
+      });
 
-            if (!inputString.trim()) {
-                statusElement.className = "text-sm h-6 flex items-center text-yellow-400 sm:ml-4";
-                statusElement.textContent = "Error: Input cannot be empty.";
-                return;
-            }
+      // Split into words by spaces or commas
+      let words = text.split(/[\s,]+/)
+        .map(w => w.trim())
+        .filter(w => w.length >= 3); // remove short words
 
-            // 1. Normalize spaces: replace all sequences of whitespace (including multiple spaces)
-            // with a single space, and then trim leading/trailing spaces.
-            const normalizedString = inputString.replace(/\s+/g, ' ').trim();
+      // Restore word pairs
+      words = words.map(w => w.replace("_", " "));
 
-            // 2. Replace the single space with a comma and a single space (", ")
-            const keywordsString = normalizedString.replace(/ /g, ', ');
+      return words.join(', ');
+    }
 
-            // Update the output area
-            outputElement.value = keywordsString;
+    document.getElementById("convertBtn").addEventListener("click", () => {
+      const input = document.getElementById("input").value;
+      const converted = cleanSentence(input);
+      document.getElementById("output").value = converted;
 
-            // 3. Copy the resulting string to the clipboard
-            try {
-                // Use the standard API if available
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(keywordsString).then(() => {
-                        // Success Feedback
-                        statusElement.className = "text-sm h-6 flex items-center text-gh-green font-semibold sm:ml-4";
-                        statusElement.textContent = "✅ Copied to clipboard!";
-                        setTimeout(() => {
-                            statusElement.className = "text-sm h-6 flex items-center text-gray-400 sm:ml-4";
-                            statusElement.textContent = "Ready to convert.";
-                        }, 3000);
-                    }).catch(err => {
-                        console.error('Failed to copy using navigator.clipboard:', err);
-                        fallbackCopy(keywordsString, statusElement);
-                    });
-                } else {
-                    // Fallback method for iFrames (execCommand)
-                    fallbackCopy(keywordsString, statusElement);
-                }
-            } catch (err) {
-                console.error('Clipboard operation failed:', err);
-                statusElement.className = "text-sm h-6 flex items-center text-red-400 sm:ml-4";
-                statusElement.textContent = "Error copying to clipboard.";
-            }
-        }
-
-        /**
-         * Fallback copy mechanism using document.execCommand('copy').
-         */
-        function fallbackCopy(textToCopy, statusElement) {
-            const textarea = document.createElement('textarea');
-            textarea.value = textToCopy;
-            textarea.style.position = 'fixed'; // Prevent scrolling to bottom
-            document.body.appendChild(textarea);
-            textarea.focus();
-            textarea.select();
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    statusElement.className = "text-sm h-6 flex items-center text-gh-green font-semibold sm:ml-4";
-                    statusElement.textContent = "✅ Copied (Fallback)!";
-                } else {
-                    throw new Error('execCommand failed');
-                }
-            } catch (err) {
-                statusElement.className = "text-sm h-6 flex items-center text-red-400 sm:ml-4";
-                statusElement.textContent = "Error: Cannot copy string.";
-            } finally {
-                document.body.removeChild(textarea);
-                setTimeout(() => {
-                    statusElement.className = "text-sm h-6 flex items-center text-gray-400 sm:ml-4";
-                    statusElement.textContent = "Ready to convert.";
-                }, 3000);
-            }
-        }
-    </script>
+      navigator.clipboard.writeText(converted).then(() => {
+        console.log("Cleaned string copied to clipboard!");
+      });
+    });
+  </script>
 </body>
 </html>
