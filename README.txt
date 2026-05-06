@@ -4,10 +4,12 @@ This is a simple, single-file web utility designed to help microstock contributo
 
 🚀 How It Works
 
-The tool performs three key actions:
+The tool performs four key actions:
 
-Normalization: It takes any input string and replaces all instances of multiple spaces, newlines, and tabs with a single space.
+Normalization: It takes any input string and replaces all instances of multiple spaces, newlines, and tabs with a single space, also remove words less than three characters.
 
 Conversion: It replaces every single space ( ) in the normalized string with a comma and a single space (, ).
+
+There is a exception list of common word combinations that are exempt from adding the comma like " Happy new year" "Happy birthday"
 
 Copy: It automatically copies the resulting keyword string to your clipboard for instant pasting.
