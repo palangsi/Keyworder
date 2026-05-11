@@ -3,78 +3,88 @@
 <head>
   <title>Sentence Cleaner Plus</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; max-width: 700px; }
-    textarea { width: 100%; height: 150px; resize: vertical; }
-    button { margin-top: 10px; padding: 8px 12px; }
-    #output { background: #f9f9f9; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px auto; max-width: 700px; line-height: 1.6; color: #333; }
+    textarea { width: 100%; height: 150px; resize: vertical; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { margin-top: 10px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #0056b3; }
+    #output { background: #f4f4f9; border: 1px solid #ddd; }
+    .status-msg { font-size: 0.85em; color: #28a745; margin-top: 5px; display: none; }
   </style>
 </head>
 <body>
   <h2>Sentence Cleaner Plus</h2>
-  <p>Paste a sentence string below. It will:</p>
+  <p>Paste a sentence string below to clean and normalize your keywords.</p>
   <ul>
-    <li>Remove extra spaces and commas</li>
-    <li>Remove words shorter than 3 characters</li>
-    <li>Preserve defined two-word phrases (no comma between them)</li>
-    <li>Return a clean comma + space separated string</li>
+    <li>Removes short words (< 3 chars)</li>
+    <li>Preserves specific phrases (e.g., "New York")</li>
+    <li>Normalizes to <strong>comma + space</strong> separation</li>
   </ul>
 
   <h3>Input</h3>
-  <textarea id="input"></textarea>
-  <button id="convertBtn">Convert</button>
+  <textarea id="input" placeholder="Enter text here..."></textarea>
+  <button id="convertBtn">Convert & Copy</button>
+  <span id="copyStatus" class="status-msg">Copied to clipboard!</span>
 
   <h3>Output</h3>
   <textarea id="output" readonly></textarea>
 
   <script>
-    // Define word pairs that should stay together
+    // FIXED: Added missing commas and removed the trailing double comma
     const wordPairs = [
-      "New York","Los Angeles","San Francisco","Happy anniversary","happy birthday",
-  "happy valentine","black background","white background","greeting card",
-  "happy holidays","happy new year","happy mothers day","happy fathers day",
-  "easter bunny","independence day","lunar new year","chinese new year",
-  "saint patrick day","labour day","children's day","merry christmas",
-  "season greetings","good friday","easter sunday","valentine's day",
-  "wedding day","baby shower","bridal shower","graduation day","christmas eve",
-  "christmas day","thanksgiving day","social media","real estate","high school",
-  "middle school","summer vacation","winter holiday","spring break","autumn leaves",
-  "golden hour","blue sky","full moon","no people","AI generated",
-  "artificial intelligence","young woman","old woman","young lady",
-      "young family","motion graphics", "10 seconds","20 seconds""big data","information highway",,
-       ];
+      "New York", "Los Angeles", "San Francisco", "Happy anniversary", "happy birthday",
+      "happy valentine", "black background", "white background", "greeting card",
+      "happy holidays", "happy new year", "happy mothers day", "happy fathers day",
+      "easter bunny", "independence day", "lunar new year", "chinese new year",
+      "saint patrick day", "labour day", "children's day", "merry christmas",
+      "season greetings", "good friday", "easter sunday", "valentine's day",
+      "wedding day", "baby shower", "bridal shower", "graduation day", "christmas eve",
+      "christmas day", "thanksgiving day", "social media", "real estate", "high school",
+      "middle school", "summer vacation", "winter holiday", "spring break", "autumn leaves",
+      "golden hour", "blue sky", "full moon", "no people", "AI generated",
+      "artificial intelligence", "young woman", "old woman", "young lady",
+      "young family", "motion graphics", "10 seconds", "20 seconds", "big data", "information highway"
+    ];
 
     function cleanSentence(inputText) {
-      let text = inputText
-        .trim()
-        .replace(/\s+/g, ' ')   // collapse spaces
-        .replace(/,+/g, ',')    // collapse commas
-        .replace(/,\s*/g, ', ');// normalize comma spacing
+      if (!inputText.trim()) return "";
 
-      // Protect word pairs by replacing spaces with underscores temporarily
-      wordPairs.forEach(pair => {
+      let text = inputText;
+
+      // 1. Protect word pairs by replacing spaces with a unique placeholder
+      // We sort by length descending to ensure "Happy New Year" is caught before "New Year"
+      const sortedPairs = [...wordPairs].sort((a, b) => b.length - a.length);
+      
+      sortedPairs.forEach(pair => {
         const regex = new RegExp(pair, "gi");
-        text = text.replace(regex, pair.replace(" ", "_"));
+        text = text.replace(regex, match => match.replace(/\s+/g, "___"));
       });
 
-      // Split into words by spaces or commas
-      let words = text.split(/[\s,]+/)
-        .map(w => w.trim())
-        .filter(w => w.length >= 3); // remove short words
+      // 2. Split by commas OR spaces
+      let segments = text.split(/[\s,]+/);
 
-      // Restore word pairs
-      words = words.map(w => w.replace("_", " "));
+      // 3. Filter out items shorter than 3 chars and trim
+      let cleaned = segments
+        .map(s => s.trim())
+        .filter(s => s.length >= 3);
 
-      return words.join(', ');
+      // 4. Restore the spaces in the protected phrases and join
+      return cleaned.map(s => s.replace(/___/g, " ")).join(', ');
     }
 
-    document.getElementById("convertBtn").addEventListener("click", () => {
+    const btn = document.getElementById("convertBtn");
+    const status = document.getElementById("copyStatus");
+
+    btn.addEventListener("click", () => {
       const input = document.getElementById("input").value;
       const converted = cleanSentence(input);
       document.getElementById("output").value = converted;
 
-      navigator.clipboard.writeText(converted).then(() => {
-        console.log("Cleaned string copied to clipboard!");
-      });
+      if (converted) {
+        navigator.clipboard.writeText(converted).then(() => {
+          status.style.display = "inline";
+          setTimeout(() => { status.style.display = "none"; }, 2000);
+        });
+      }
     });
   </script>
 </body>
