@@ -14,11 +14,6 @@
 <body>
   <h2>Sentence Cleaner Plus</h2>
   <p>Paste a sentence string below to clean and normalize your keywords.</p>
-  <ul>
-    <li>Removes short words (< 3 chars)</li>
-    <li>Preserves specific phrases (e.g., "New York")</li>
-    <li>Normalizes to <strong>comma + space</strong> separation</li>
-  </ul>
 
   <h3>Input</h3>
   <textarea id="input" placeholder="Enter text here..."></textarea>
@@ -29,45 +24,36 @@
   <textarea id="output" readonly></textarea>
 
   <script>
-    // FIXED: Added missing commas and removed the trailing double comma
-    const wordPairs = [
-      "New York", "Los Angeles", "San Francisco", "Happy anniversary", "happy birthday",
-      "happy valentine", "black background", "white background", "greeting card",
-      "happy holidays", "happy new year", "happy mothers day", "happy fathers day",
-      "easter bunny", "independence day", "lunar new year", "chinese new year",
-      "saint patrick day", "labour day", "children's day", "merry christmas",
-      "season greetings", "good friday", "easter sunday", "valentine's day",
-      "wedding day", "baby shower", "bridal shower", "graduation day", "christmas eve",
-      "christmas day", "thanksgiving day", "social media", "real estate", "high school",
-      "middle school", "summer vacation", "winter holiday", "spring break", "autumn leaves",
-      "golden hour", "blue sky", "full moon", "no people", "AI generated",
-      "artificial intelligence", "young woman", "old woman", "young lady",
-      "young family", "motion graphics", "10 seconds", "20 seconds", "big data", "information highway", "art deco","multinational corporation","work from home"
-    ];
+    let wordpairs = []; // global variable to hold exceptions
+
+    // Load wordpairs.json dynamically
+    fetch('wordpairs.json')
+      .then(response => response.json())
+      .then(data => {
+        wordpairs = data.exceptions;
+        console.log("Loaded wordpairs:", wordpairs);
+      })
+      .catch(error => console.error("Error loading wordpairs:", error));
 
     function cleanSentence(inputText) {
       if (!inputText.trim()) return "";
 
       let text = inputText;
 
-      // 1. Protect word pairs by replacing spaces with a unique placeholder
-      // We sort by length descending to ensure "Happy New Year" is caught before "New Year"
-      const sortedPairs = [...wordPairs].sort((a, b) => b.length - a.length);
-      
+      // Sort by length descending so longer phrases are protected first
+      const sortedPairs = [...wordpairs].sort((a, b) => b.length - a.length);
+
       sortedPairs.forEach(pair => {
         const regex = new RegExp(pair, "gi");
         text = text.replace(regex, match => match.replace(/\s+/g, "___"));
       });
 
-      // 2. Split by commas OR spaces
       let segments = text.split(/[\s,]+/);
 
-      // 3. Filter out items shorter than 3 chars and trim
       let cleaned = segments
         .map(s => s.trim())
         .filter(s => s.length >= 3);
 
-      // 4. Restore the spaces in the protected phrases and join
       return cleaned.map(s => s.replace(/___/g, " ")).join(', ');
     }
 
