@@ -76,14 +76,15 @@
 
     document.getElementById("addExceptionBtn").addEventListener("click", () => {
       const newEx = document.getElementById("newException").value.trim();
-      if (newEx.split(" ").length >= 2 && newEx.length > 0) {
+      const wordCount = newEx.split(/\s+/).length;
+      if ((wordCount === 2 || wordCount === 3) && newEx.length > 0) {
         wordpairs.push(newEx);
         wordpairs = [...new Set(wordpairs)];
         saveUserExceptions();
         renderExceptions();
         document.getElementById("newException").value = "";
       } else {
-        alert("Please enter at least two words.");
+        alert("Please enter exactly two or three words.");
       }
     });
 
@@ -132,7 +133,8 @@
       const sortedPairs = [...wordpairs].sort((a, b) => b.length - a.length);
       sortedPairs.forEach(pair => {
         const regex = new RegExp(pair, "gi");
-        text = text.replace(regex, match => match.replace(/\s+/g, "___"));
+        // Protect all spaces in the phrase
+        text = text.replace(regex, pair.replace(/\s+/g, "___"));
       });
       let segments = text.split(/[\s,]+/);
       let cleaned = segments.map(s => s.trim()).filter(s => s.length >= 3);
