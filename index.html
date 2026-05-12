@@ -9,6 +9,9 @@
     button:hover { background-color: #0056b3; }
     #output { background: #f4f4f9; border: 1px solid #ddd; }
     .status-msg { font-size: 0.85em; color: #28a745; margin-top: 5px; display: none; }
+    #exceptions { margin-top: 20px; }
+    #exceptions ul { list-style: none; padding: 0; }
+    #exceptions li { margin: 4px 0; }
   </style>
 </head>
 <body>
@@ -23,24 +26,81 @@
   <h3>Output</h3>
   <textarea id="output" readonly></textarea>
 
+  <div id="exceptions">
+    <h3>Manage Exceptions</h3>
+    <input type="text" id="newException" placeholder="Enter two or three words">
+    <button id="addExceptionBtn">Add Exception</button>
+    <button id="clearExceptionsBtn">Clear Saved Exceptions</button>
+    <ul id="exceptionList"></ul>
+  </div>
+
   <script>
-    let wordpairs = []; // global variable to hold exceptions
+    let wordpairs = [];
 
-    // Load wordpairs.json dynamically
+    // Load defaults from JSON
     fetch('wordpairs.json')
-      .then(response => response.json())
+      .then(r => r.json())
       .then(data => {
-        wordpairs = data.exceptions;
-        console.log("Loaded wordpairs:", wordpairs);
-      })
-      .catch(error => console.error("Error loading wordpairs:", error));
+        wordpairs = data.exceptions || [];
+        loadUserExceptions();
+        renderExceptions();
+      });
 
+    // Load user exceptions from localStorage
+    function loadUserExceptions() {
+      const stored = localStorage.getItem("userWordpairs");
+      if (stored) {
+        try {
+          const userList = JSON.parse(stored);
+          wordpairs = [...new Set([...wordpairs, ...userList])];
+        } catch (e) {
+          console.error("Error parsing stored exceptions:", e);
+        }
+      }
+    }
+
+    // Save user exceptions to localStorage
+    function saveUserExceptions() {
+      localStorage.setItem("userWordpairs", JSON.stringify(wordpairs));
+    }
+
+    // Render list of exceptions
+    function renderExceptions() {
+      const list = document.getElementById("exceptionList");
+      list.innerHTML = "";
+      wordpairs.forEach(pair => {
+        const li = document.createElement("li");
+        li.textContent = pair;
+        list.appendChild(li);
+      });
+    }
+
+    // Add new exception
+    document.getElementById("addExceptionBtn").addEventListener("click", () => {
+      const newEx = document.getElementById("newException").value.trim();
+      if (newEx.split(" ").length >= 2 && newEx.length > 0) {
+        wordpairs.push(newEx);
+        wordpairs = [...new Set(wordpairs)];
+        saveUserExceptions();
+        renderExceptions();
+        document.getElementById("newException").value = "";
+      } else {
+        alert("Please enter at least two words.");
+      }
+    });
+
+    // Clear all user exceptions
+    document.getElementById("clearExceptionsBtn").addEventListener("click", () => {
+      localStorage.removeItem("userWordpairs");
+      wordpairs = [];
+      renderExceptions();
+    });
+
+    // Sentence cleaner
     function cleanSentence(inputText) {
       if (!inputText.trim()) return "";
 
       let text = inputText;
-
-      // Sort by length descending so longer phrases are protected first
       const sortedPairs = [...wordpairs].sort((a, b) => b.length - a.length);
 
       sortedPairs.forEach(pair => {
