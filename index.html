@@ -16,7 +16,6 @@
 </head>
 <body>
   <h2>Sentence Cleaner Plus</h2>
-  <p>Paste a sentence string below to clean and normalize your keywords.</p>
 
   <h3>Input</h3>
   <textarea id="input" placeholder="Enter text here..."></textarea>
@@ -31,6 +30,9 @@
     <input type="text" id="newException" placeholder="Enter two or three words">
     <button id="addExceptionBtn">Add Exception</button>
     <button id="clearExceptionsBtn">Clear Saved Exceptions</button>
+    <button id="downloadBtn">Download Exceptions</button>
+    <input type="file" id="uploadInput" accept=".json" style="display:none">
+    <button id="uploadBtn">Upload Exceptions</button>
     <ul id="exceptionList"></ul>
   </div>
 
@@ -46,7 +48,6 @@
         renderExceptions();
       });
 
-    // Load user exceptions from localStorage
     function loadUserExceptions() {
       const stored = localStorage.getItem("userWordpairs");
       if (stored) {
@@ -59,12 +60,10 @@
       }
     }
 
-    // Save user exceptions to localStorage
     function saveUserExceptions() {
       localStorage.setItem("userWordpairs", JSON.stringify(wordpairs));
     }
 
-    // Render list of exceptions
     function renderExceptions() {
       const list = document.getElementById("exceptionList");
       list.innerHTML = "";
@@ -75,7 +74,6 @@
       });
     }
 
-    // Add new exception
     document.getElementById("addExceptionBtn").addEventListener("click", () => {
       const newEx = document.getElementById("newException").value.trim();
       if (newEx.split(" ").length >= 2 && newEx.length > 0) {
@@ -89,31 +87,55 @@
       }
     });
 
-    // Clear all user exceptions
     document.getElementById("clearExceptionsBtn").addEventListener("click", () => {
       localStorage.removeItem("userWordpairs");
       wordpairs = [];
       renderExceptions();
     });
 
-    // Sentence cleaner
+    // Download exceptions as JSON
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({exceptions: wordpairs}, null, 2));
+      const dlAnchor = document.createElement("a");
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "my_exceptions.json");
+      dlAnchor.click();
+    });
+
+    // Upload exceptions from JSON
+    document.getElementById("uploadBtn").addEventListener("click", () => {
+      document.getElementById("uploadInput").click();
+    });
+
+    document.getElementById("uploadInput").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const userData = JSON.parse(e.target.result);
+          if (userData.exceptions) {
+            wordpairs = [...new Set([...wordpairs, ...userData.exceptions])];
+            saveUserExceptions();
+            renderExceptions();
+          }
+        } catch (err) {
+          alert("Invalid JSON file.");
+        }
+      };
+      reader.readAsText(file);
+    });
+
     function cleanSentence(inputText) {
       if (!inputText.trim()) return "";
-
       let text = inputText;
       const sortedPairs = [...wordpairs].sort((a, b) => b.length - a.length);
-
       sortedPairs.forEach(pair => {
         const regex = new RegExp(pair, "gi");
         text = text.replace(regex, match => match.replace(/\s+/g, "___"));
       });
-
       let segments = text.split(/[\s,]+/);
-
-      let cleaned = segments
-        .map(s => s.trim())
-        .filter(s => s.length >= 3);
-
+      let cleaned = segments.map(s => s.trim()).filter(s => s.length >= 3);
       return cleaned.map(s => s.replace(/___/g, " ")).join(', ');
     }
 
@@ -124,7 +146,6 @@
       const input = document.getElementById("input").value;
       const converted = cleanSentence(input);
       document.getElementById("output").value = converted;
-
       if (converted) {
         navigator.clipboard.writeText(converted).then(() => {
           status.style.display = "inline";
